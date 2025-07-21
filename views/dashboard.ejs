@@ -1,0 +1,88 @@
+<%- include('partials/header') %>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Dashboard</h2>
+    <a href="/logout" class="btn btn-danger">Logout</a>
+</div>
+
+
+<h4>Add New Device</h4>
+<form action="/add-device" method="POST" class="mb-4">
+    <div class="input-group">
+        <input type="text" name="deviceName" class="form-control" placeholder="Enter Device Name" required>
+        <button class="btn btn-success" type="submit">Add Device</button>
+    </div>
+</form>
+
+<hr>
+
+<h4>Your Devices</h4>
+<div class="row">
+    <% devices.forEach(device => { %>
+        <div class="col-md-6 mb-3">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title"><%= device.name %></h5>
+                    <p class="card-text">Status: 
+                        <span id="status-<%= device._id %>" class="badge 
+                            <%= activeClients.has(device._id.toString()) ? 'bg-success' : 'bg-danger' %>">
+                            <%= activeClients.has(device._id.toString()) ? 'Connected' : 'Disconnected' %>
+                        </span>
+                    </p>
+                    <div id="qr-<%= device._id %>" class="mb-2"></div>
+                    
+                    <% if (activeClients.has(device._id.toString())) { %>
+                        <a href="/device/<%= device._id %>" class="btn btn-primary btn-sm">Manage</a>
+                        <form action="/device/<%= device._id %>/disconnect" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-warning btn-sm">Disconnect</button>
+                        </form>
+                    <% } else { %>
+                         <form action="/add-device" method="POST" style="display:none;">
+                             <!-- Hidden form to re-initiate connection if needed -->
+                         </form>
+                    <% } %>
+                    
+                    <form action="/device/<%= device._id %>/delete" method="POST" style="display:inline;">
+                        <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    <% }) %>
+</div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcode-generator/1.4.4/qrcode.js"></script>
+<script>
+    const socket = io();
+
+    socket.on('qr', ({ deviceId, qr }) => {
+        const qrContainer = document.getElementById(`qr-${deviceId}`);
+        if (qrContainer) {
+            qrContainer.innerHTML = '';
+            const qrCode = qrcode(0, 'L');
+            qrCode.addData(qr);
+            qrCode.make();
+            qrContainer.innerHTML = qrCode.createImgTag(4);
+            document.getElementById(`status-${deviceId}`).textContent = 'Waiting for Scan';
+            document.getElementById(`status-${deviceId}`).className = 'badge bg-warning';
+        }
+    });
+
+    socket.on('status', ({ deviceId, message }) => {
+        const statusEl = document.getElementById(`status-${deviceId}`);
+        if (statusEl) {
+            statusEl.textContent = message;
+            if (message === 'Connected') {
+                statusEl.className = 'badge bg-success';
+                document.getElementById(`qr-${deviceId}`).innerHTML = '';
+                // Reload to show manage button
+                location.reload(); 
+            } else {
+                statusEl.className = 'badge bg-danger';
+            }
+        }
+    });
+</script>
+
+<%- include('partials/footer') %>
