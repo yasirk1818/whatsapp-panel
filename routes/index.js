@@ -52,7 +52,6 @@ router.post('/add-device', isAuthenticated, async (req, res) => {
     const { deviceName } = req.body;
     const device = new Device({ user: req.session.userId, name: deviceName });
     await device.save();
-    // Pass 'io' object from app.js to initializeClient
     const io = req.app.get('socketio');
     initializeClient(device._id.toString(), io);
     res.redirect('/dashboard');
@@ -65,7 +64,7 @@ router.get('/device/:id', isAuthenticated, async (req, res) => {
         return res.status(404).send('Device not found');
     }
     const keywords = await Keyword.find({ device: req.params.id });
-    res.render('manage-device', { device, keywords });
+    res.render('manage-device', { device, keywords, saved: req.query.saved });
 });
 
 // Add Keyword
@@ -90,7 +89,7 @@ router.post('/device/:id/update-features', isAuthenticated, async (req, res) => 
         alwaysOnline: !!alwaysOnline,
         rejectCalls: !!rejectCalls
     });
-    res.redirect(`/device/${req.params.id}`);
+    res.redirect(`/device/${req.params.id}?saved=true`);
 });
 
 // Disconnect Device
@@ -114,6 +113,16 @@ router.post('/device/:id/delete', isAuthenticated, async (req, res) => {
     res.redirect('/dashboard');
 });
 
+// --- YEH NAYA ROUTE HAI RECONNECT KE LIYE ---
+router.post('/device/:id/reconnect', isAuthenticated, async (req, res) => {
+    const deviceId = req.params.id;
+    const client = getClient(deviceId);
+    if (!client) { // Sirf tab hi reconnect karein jab client active na ho
+        const io = req.app.get('socketio');
+        initializeClient(deviceId, io);
+    }
+    res.redirect('/dashboard');
+});
 
 // Logout
 router.get('/logout', (req, res) => {
