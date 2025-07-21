@@ -5,7 +5,6 @@
     <a href="/logout" class="btn btn-danger">Logout</a>
 </div>
 
-
 <h4>Add New Device</h4>
 <form action="/add-device" method="POST" class="mb-4">
     <div class="input-group">
@@ -23,25 +22,41 @@
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title"><%= device.name %></h5>
+                    
+                    <% if (device.phoneNumber) { %>
+                        <p class="card-text text-muted mb-2">Number: +<%= device.phoneNumber %></p>
+                    <% } %>
+
                     <p class="card-text">Status: 
                         <span id="status-<%= device._id %>" class="badge 
                             <%= activeClients.has(device._id.toString()) ? 'bg-success' : 'bg-danger' %>">
                             <%= activeClients.has(device._id.toString()) ? 'Connected' : 'Disconnected' %>
                         </span>
                     </p>
-                    <div id="qr-<%= device._id %>" class="mb-2"></div>
                     
+                    <div id="qr-<%= device._id %>" class="mb-2 text-center">
+                        <% if (!activeClients.has(device._id.toString())) { %>
+                            <div class="alert alert-light p-2 border-0">
+                                Please wait, loading QR code...
+                            </div>
+                        <% } %>
+                    </div>
+                    
+                    <!-- YEH IF/ELSE CONDITION NAYI HAI BUTTONS KE LIYE -->
                     <% if (activeClients.has(device._id.toString())) { %>
+                        <!-- Connected State Buttons -->
                         <a href="/device/<%= device._id %>" class="btn btn-primary btn-sm">Manage</a>
                         <form action="/device/<%= device._id %>/disconnect" method="POST" style="display:inline;">
                             <button type="submit" class="btn btn-warning btn-sm">Disconnect</button>
                         </form>
                     <% } else { %>
-                         <form action="/add-device" method="POST" style="display:none;">
-                             <!-- Hidden form to re-initiate connection if needed -->
-                         </form>
+                        <!-- Disconnected State Button -->
+                        <form action="/device/<%= device._id %>/reconnect" method="POST" style="display:inline;">
+                            <button type="submit" class="btn btn-info btn-sm">Reconnect</button> <!-- Naya Reconnect Button -->
+                        </form>
                     <% } %>
                     
+                    <!-- Delete button hamesha dikhega -->
                     <form action="/device/<%= device._id %>/delete" method="POST" style="display:inline;">
                         <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                     </form>
@@ -59,7 +74,7 @@
     socket.on('qr', ({ deviceId, qr }) => {
         const qrContainer = document.getElementById(`qr-${deviceId}`);
         if (qrContainer) {
-            qrContainer.innerHTML = '';
+            qrContainer.innerHTML = ''; 
             const qrCode = qrcode(0, 'L');
             qrCode.addData(qr);
             qrCode.make();
@@ -76,10 +91,11 @@
             if (message === 'Connected') {
                 statusEl.className = 'badge bg-success';
                 document.getElementById(`qr-${deviceId}`).innerHTML = '';
-                // Reload to show manage button
-                location.reload(); 
+                setTimeout(() => location.reload(), 1500); 
             } else {
                 statusEl.className = 'badge bg-danger';
+                 // Agar disconnect ho jaye to page reload karein taake reconnect ka button dikhe
+                setTimeout(() => location.reload(), 1000);
             }
         }
     });
