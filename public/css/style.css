@@ -1,0 +1,5 @@
+/* Custom Styles */
+#qr-container img {
+    margin: 0 auto;
+    display: block;
+}
