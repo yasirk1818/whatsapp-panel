@@ -1,0 +1,64 @@
+<%- include('partials/header') %>
+
+<h3>Manage Device: <%= device.name %></h3>
+<a href="/dashboard" class="btn btn-secondary mb-3">Back to Dashboard</a>
+
+<div class="row">
+    <!-- Feature Toggles -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Features</h5>
+                <form action="/device/<%= device._id %>/update-features" method="POST">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="autoRead" id="autoRead" <%= device.autoRead ? 'checked' : '' %>>
+                        <label class="form-check-label" for="autoRead">Auto Read Messages (Send Seen)</label>
+                    </div>
+                     <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="alwaysOnline" id="alwaysOnline" <%= device.alwaysOnline ? 'checked' : '' %> disabled>
+                        <label class="form-check-label" for="alwaysOnline">Always Online (Coming Soon)</label>
+                    </div>
+                     <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" name="rejectCalls" id="rejectCalls" <%= device.rejectCalls ? 'checked' : '' %>>
+                        <label class="form-check-label" for="rejectCalls">Auto Reject Calls</label>
+                    </div>
+                    <button type="submit" class="btn btn-primary mt-3">Save Features</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Keyword Auto-Reply -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Keyword Based Auto-Reply</h5>
+                <form action="/device/<%= device._id %>/add-keyword" method="POST">
+                    <div class="mb-2">
+                        <input type="text" name="keyword" class="form-control" placeholder="Keyword" required>
+                    </div>
+                    <div class="mb-2">
+                        <textarea name="reply" class="form-control" placeholder="Reply Message" required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-success">Add Keyword</button>
+                </form>
+                <hr>
+                <h6>Existing Keywords</h6>
+                <ul class="list-group">
+                    <% keywords.forEach(item => { %>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <strong><%= item.keyword %>:</strong> <%= item.reply %>
+                            </div>
+                            <form action="/device/<%= device._id %>/delete-keyword/<%= item._id %>" method="POST">
+                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                            </form>
+                        </li>
+                    <% }) %>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
